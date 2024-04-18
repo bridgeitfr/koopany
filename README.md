@@ -4,4 +4,6 @@ Il est mis à disposition de manière simple, sans documentation précise, mais 
 
 Enjoy and Have Fun !
 
+PS: ne jugez pas le code, non structuré au niveau JS avec l'ensemble des fonctions et scripts groupés sur la page web. 
+
 Credits: Bridge IT
