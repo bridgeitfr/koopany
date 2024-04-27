@@ -90,6 +90,8 @@
                             <th>Nom Complet</th>
                             <th>Nb salariés</th>
                             <th>Siège</th>
+                            <th>Prénom</th>
+                            <th>Nom</th>
                             <th>CA Année</th>
                             <th>CA</th>
                             <th>Résultat</th>
@@ -103,6 +105,10 @@
             <div class="col-md-2">
                 <div class="card">
                     <div class="card-body">
+                        <textarea id="companySearch" rows="5" class="form-control" placeholder="entreprise (1 par ligne)"></textarea>
+                        <a class="btn btn-info btn-sm" onclick="analyzeCompanies(); return false;">Analyser</a> 
+                        <a class="btn btn-info btn-sm" onclick="clearTable(); return false;">Vider</a> 
+                        
                         <div class="row mt-4">
                             <div class="col-md-12 mb-2">
                                 <input type="number" class="form-control" id="caCibleMin" placeholder="CA Cible Min" value="">
@@ -495,8 +501,8 @@
                                         caColor = (finance.ca < caCibleMin) ? 'danger' : 'success';
                                         resColor = (finance.resultat_net <= resCibleMin) ? 'danger' : 'success';
                                         caAnnee=annee;
-                                        caMontant=finance.ca.toLocaleString('fr-FR');
-                                        caResultat=finance.resultat_net.toLocaleString('fr-FR');
+                                        caMontant=finance.ca;
+                                        caResultat=finance.resultat_net;
                                         first = false; // Mettre le flag à false après la première itération
                                         break; // Arrête la boucle après la première itération
                                     }
@@ -510,6 +516,8 @@
                                     <td>${item.nom_complet}</td>
                                     <td>${nbSalaries}</td>
                                     <td>${infosBureaux_commune}</td>
+                                    <td>${item.dirigeants[0].prenoms}</td>
+                                    <td>${item.dirigeants[0].nom}</td>
                                     <td>${caAnnee}</td>
                                     <td><span class="badge bg-${caColor}">${caMontant} €</span></td>
                                     <td><span class="badge bg-${resColor}">${caResultat} €</span></td>
@@ -524,6 +532,146 @@
                 }
             });
         }
+        companySearch='';
+        function analyzeCompanies() {
+            companySearch = $('#companySearch').val();
+            
+            companySearch = companySearch.split('\n'); // Divise le contenu du textarea en lignes
+            if (companySearch.length > 0) { fillCompaniesInfo(); }
+
+        }
+        function fillCompaniesInfo(companyName,emptyTable=false)
+        {
+            if (companySearch.length > 0) 
+            {
+                element= companySearch.shift();
+                parts = element.split(',');
+                companyName = parts[0];
+                region = parts[1];
+
+                if (companyName != '')
+                {
+                    var params = {
+                        recherche: companyName,
+                    };
+                    currentPage=eval($('#pageNum').val());
+                    $.ajax({
+                        url: 'https://recherche-entreprises.api.gouv.fr/search',
+                        data: buildAjaxData(params),
+                        success: function(data) {
+                            $('#currentPage').html($('#pageNum').val());
+                            $('#nbResults').html(data.results.length+' résultats');
+                            if (emptyTable) { $('#resultsTable').empty(); }
+                            $('#nbResultsTotal').html(data.total_results);
+                            $('#nbPages').html(data.total_pages);
+                            $('#nbPagesTotal').val(data.total_pages);
+                            
+                            $('#btnPreviousPage').hide();
+                            $('#btnFirstPage').hide();
+                            $('#btnNextPage').hide();
+                            $('#btnLastPage').hide();
+                            counter=0;
+                            data.results.forEach(function(item) {
+
+                                infosBureaux_commune='';
+                                infosBureaux_adresse='';
+                                siege='oui';
+
+                                infosBureaux_commune=item.siege.libelle_commune;
+                                infosBureaux_adresse=item.siege.adresse;
+                                infosBureaux_departement=item.siege.departement;
+                                infoBureaux_region=item.siege.region;
+                                addData=true;
+                                var selectedDepartments = $('#departementSelect').val();
+                                var selectedRegions = $('#regionSelect').val();
+
+                                if (addData == true)
+                                {
+                                    finances='';
+                                    let nombreAnneesFinances = Object.keys(item.finances).length;
+                                    caAnnee='';
+                                    caMontant='';
+                                    caResultat='';
+                                    caColor='success';
+                                    resColor='success';
+                                    if (nombreAnneesFinances > 0)
+                                    {
+                                        finances = '';
+                                        let first = true; // Flag pour vérifier si c'est la première itération
+                                        
+                                        caCibleMin = $('#caCibleMin').val();
+                                        resCibleMin = $('#resCibleMin').val();
+                                        for (let annee in item.finances) {
+                                            if (first) { // Vérifie si c'est la première itération
+                                                let finance = item.finances[annee];
+                                                
+                                                caColor = (finance.ca < caCibleMin) ? 'danger' : 'success';
+                                                resColor = (finance.resultat_net <= resCibleMin) ? 'danger' : 'success';
+                                                caAnnee=annee;
+                                                caMontant=finance.ca;
+                                                caResultat=finance.resultat_net;
+                                                first = false; // Mettre le flag à false après la première itération
+                                                break; // Arrête la boucle après la première itération
+                                            }
+                                        }
+                                    }
+                                    nbSalaries=getEmployeeRangeDescription(item.tranche_effectif_salarie);
+                                    if (item.dirigeants.length > 0)
+                                    {
+                                        prenoms=item.dirigeants[0].prenoms;
+                                        nom=item.dirigeants[0].nom;
+                                    } else {
+                                        prenoms='';
+                                        nom='';
+                                    }
+                                    $('#resultsTable').append(
+                                        `<tr id="company-${counter}">
+                                            <td>${item.siren}</td>
+                                            <td>${item.activite_principale}</td>
+                                            <td>${item.nom_complet}</td>
+                                            <td>${nbSalaries}</td>
+                                            <td>${infosBureaux_commune}</td>
+                                            <td>${prenoms}</td>
+                                            <td>${nom}</td>
+                                            <td>${caAnnee}</td>
+                                            <td><span class="badge bg-${caColor}">${caMontant} €</span></td>
+                                            <td><span class="badge bg-${resColor}">${caResultat} €</span></td>
+                                            <td><a href="#" onclick="removeLine(${counter});return false;">X</a></td>
+                                        </tr>`
+                                    );
+                                    counter++;
+                                }
+                                setTimeout(function() {
+                                    
+                                    if (companySearch.length > 0) { fillCompaniesInfo(); }
+                                }, 2000);
+                                
+                            });
+                        },
+                        error: function() {
+                            alert('Error fetching data.');
+                        }
+                    });
+                }
+            }
+            
+
+            
+        }
+
+        function removeLine(line){
+            //if (window.confirm("Are you sure ?")) {
+                $('#company-'+line).remove();
+            //}
+        }
+
+        function clearTable()
+        {
+            if (window.confirm("Are you sure ?")) {
+                $('#resultsTable').empty();
+            }
+        }
+
         $(document).ready(function() {
 
             const $select = $('#numEmployees');
