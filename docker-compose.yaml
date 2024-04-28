@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  apache:
+    image: httpd:latest
+    container_name: koopany
+    ports:
+    - '80:80'
+    volumes:
+    - .:/usr/local/apache2/htdocs
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.mainApp.rule=Host(`koopany.kodyssey.io`)"
+    - "traefik.http.routers.mainApp.entrypoints=websecure"
+    - "traefik.http.routers.mainApp.tls=true"
