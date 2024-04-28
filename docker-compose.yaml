@@ -7,6 +7,7 @@ services:
     - .:/usr/local/apache2/htdocs
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mainApp.rule=Host(`koopany.kodyssey.io`)"
-      - "traefik.http.routers.mainApp.entrypoints=websecure"
-      - "traefik.http.routers.mainApp.tls=true"
+      - "traefik.http.routers.koopany.rule=Host(`koopany.kodyssey.io`)"
+      - "traefik.http.routers.koopany.entrypoints=websecure"
+      - "traefik.http.routers.koopany.tls=true"
+      - "traefik.http.services.koopany.loadbalancer.server.port=80"
