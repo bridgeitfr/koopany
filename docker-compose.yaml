@@ -1,13 +1,19 @@
 version: '3.9'
 services:
-  apache:
-    image: httpd:latest
-    container_name: koopany
+  webserver1:
+    image: nginx
     volumes:
-    - .:/usr/local/apache2/htdocs
+      - ./:/usr/share/nginx/html
+    networks:
+      - app
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.koopany.rule=Host(`koopany.kodyssey.io`)"
       - "traefik.http.routers.koopany.entrypoints=websecure"
       - "traefik.http.routers.koopany.tls=true"
-      - "traefik.http.services.koopany.loadbalancer.server.port=80"
+      - "traefik.docker.network=app"
+      - "traefik.http.services.pma1jj03wzudedpi0mm.loadbalancer.server.port=80"
+
+networks:
+  app:
+    external: true
