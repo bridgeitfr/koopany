@@ -3,8 +3,6 @@ services:
   apache:
     image: httpd:latest
     container_name: koopany
-    ports:
-    - '80:80'
     volumes:
     - .:/usr/local/apache2/htdocs
     labels:
